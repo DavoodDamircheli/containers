@@ -19,6 +19,14 @@ From: ubuntu:18.04
     # Install OpenGL libraries needed for Gmsh
     apt-get install -y libglu1-mesa  libxcursor1 libxinerama1 libxrandr2 libxi6 libxcomposite1 libxt6
 
+    # Install ncurses-term for termianl xterm
+    
+    apt-get install ncurses-term
+    
+    # Install vim
+    apt update && apt install vim
+
+
     # Create a symlink for python command to point to python3
     ln -s /usr/bin/python3 /usr/bin/python
 
