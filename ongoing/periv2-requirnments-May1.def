@@ -14,6 +14,10 @@ From: ubuntu:18.04
     export DEBIAN_FRONTEND=noninteractive
     apt-get update && apt-get install -y wget git bash gcc gfortran g++ make python3 python3-pip python3-dev python3-venv libhdf5-serial-dev python3-tk
 
+
+    # Install OpenGL libraries needed for Gmsh
+    apt-get install -y libglu1-mesa  libxcursor1 libxinerama1 libxrandr2 libxi6 libxcomposite1 libxt6
+
     # Create a symlink for python command to point to python3
     ln -s /usr/bin/python3 /usr/bin/python
     
@@ -25,4 +29,3 @@ From: ubuntu:18.04
 %test
     # Ensure Python and necessary packages are correctly installed
     python -c "import gekko, gmsh, h5py, matplotlib, meshio, numpy, pathos, pygmsh, seaborn"
-    gmsh --verison
