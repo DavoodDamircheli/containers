@@ -1,0 +1,28 @@
+
+bootstrap: docker
+From: ubuntu:18.04
+
+%environment
+    # Set MPICH environment variables
+    export MPICH_DIR=/opt/mpich
+    export PATH="$MPICH_DIR/bin:$PATH"
+    export LD_LIBRARY_PATH="$MPICH_DIR/lib:$LD_LIBRARY_PATH"
+    export MANPATH="$MPICH_DIR/share/man:$MANPATH"
+
+%post
+    echo "Installing required packages..."
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update && apt-get install -y wget git bash gcc gfortran g++ make python3 python3-pip python3-dev python3-venv libhdf5-serial-dev python3-tk
+
+    # Create a symlink for python command to point to python3
+    ln -s /usr/bin/python3 /usr/bin/python
+    
+    # Update pip and install required Python packages
+    python -m pip install --upgrade pip
+    python -m pip install gekko gmsh h5py matplotlib meshio numpy pathos pygmsh seaborn
+    
+
+%test
+    # Ensure Python and necessary packages are correctly installed
+    python -c "import gekko, gmsh, h5py, matplotlib, meshio, numpy, pathos, pygmsh, seaborn"
+    gmsh --verison

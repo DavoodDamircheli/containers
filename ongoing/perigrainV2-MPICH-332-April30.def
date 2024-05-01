@@ -1,0 +1,60 @@
+
+bootstrap: docker
+From: ubuntu:20.04
+
+%environment
+    # Point to MPICH binaries, libraries, and man pages
+    export MPICH_DIR=/opt/mpich
+    export PATH="$MPICH_DIR/bin:$PATH"
+    export LD_LIBRARY_PATH="$MPICH_DIR/lib:$LD_LIBRARY_PATH"
+    export MANPATH="$MPICH_DIR/share/man:$MANPATH"
+
+%post
+    echo "Installing required packages..."
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update && apt-get install -y wget git bash gcc gfortran g++ make python3.10 python3.10-distutils python3.10-dev python3.10-venv libhdf5-serial-dev python3-tk
+
+    # Setup Python
+    wget https://bootstrap.pypa.io/get-pip.py && python3.10 get-pip.py
+    python3.10 -m pip install gekko gmsh h5py matplotlib meshio numpy pathos pygmsh seaborn
+
+    # Information about the version of MPICH to use
+    export MPICH_VERSION=3.3.2
+    export MPICH_URL="http://www.mpich.org/static/downloads/$MPICH_VERSION/mpich-$MPICH_VERSION.tar.gz"
+    export MPICH_DIR=/opt/mpich
+
+    echo "Installing MPICH..."
+    mkdir -p /tmp/mpich
+    mkdir -p /opt
+    cd /tmp/mpich && wget -O mpich-$MPICH_VERSION.tar.gz $MPICH_URL && tar xzf mpich-$MPICH_VERSION.tar.gz
+    cd /tmp/mpich/mpich-$MPICH_VERSION && ./configure --prefix=$MPICH_DIR && make install
+
+    # Clean up
+    #rm -rf /tmp/mpich
+    #apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+
+
+    # Set env variables so we can compile our application
+    export PATH=$MPICH_DIR/bin:$PATH
+    export LD_LIBRARY_PATH=$MPICH_DIR/lib:$LD_LIBRARY_PATH
+
+%files
+    # Copy your project directory
+    #path/to/your/local/project /app/myproject
+    /home/davood/projects/raw_perigrain_v2_April30_2024/beta_perigrain_v2  /app/perigrain-April30-2024
+
+%runscript
+    # Command to run your application, adjust if necessary
+    echo "Running my application"
+    cd /app/myproject
+    #make -f my_makefile
+    make -f makefile_linux 
+%test
+    # Commands to test the installation
+    python3.10 -c "import numpy; print(numpy.__version__)"
+    mpicc -v
+
+%help
+    This container includes Python 3.10.12, MPICH 3.3.2, and essential libraries for mesh-related processing. The project is located at /app/myproject.
+

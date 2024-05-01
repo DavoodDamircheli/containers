@@ -1,0 +1,50 @@
+
+Bootstrap: docker
+From: ubuntu:20.04
+
+%labels
+    Author Davood Damircheli
+
+%help
+    This container includes Intel compilers and MPICH 3.3.2 for MPI-based applications.
+
+%environment
+    export PATH=/opt/intel/compilers_and_libraries/linux/bin/intel64:$PATH
+    export MANPATH=/opt/intel/compilers_and_libraries/linux/man/common:$MANPATH
+    export LD_LIBRARY_PATH=/opt/intel/compilers_and_libraries/linux/lib/intel64:$LD_LIBRARY_PATH
+    export MPICH_HOME=/opt/mpich-3.3.2
+    export PATH=$MPICH_HOME/bin:$PATH
+    export LD_LIBRARY_PATH=$MPICH_HOME/lib:$LD_LIBRARY_PATH
+
+%post
+    # Update and install necessary packages
+    apt-get update && apt-get install -y wget build-essential cpio ncurses-term
+
+    # Set terminal for the installation
+    export TERM=xterm-256color
+
+    # Install Intel compilers
+    # Download Intel Parallel Studio XE run file
+    wget https://registrationcenter-download.intel.com/akdlm/IRC_NAS/7f096850-dc7b-4c35-90b5-36c12abd9eaa/l_HPCKit_p_2024.1.0.560.sh
+    chmod +x l_HPCKit_p_2024.1.0.560.sh
+
+    # Run installer in silent mode with a configuration file if required
+    # Ensure you provide or reference a valid silent configuration file (silent.cfg)
+    ./l_HPCKit_p_2024.1.0.560.sh -s
+
+    # Download and install MPICH
+    wget http://www.mpich.org/static/downloads/3.3.2/mpich-3.3.2.tar.gz
+    tar -xzf mpich-3.3.2.tar.gz
+    cd mpich-3.3.2
+    ./configure --prefix=/opt/mpich-3.3.2 --with-device=ch3:nemesis --with-pm=hydra --disable-fortran
+    make -j $(nproc) all
+    make install
+
+%runscript
+    echo "Container with Intel compilers and MPICH 3.3.2 is ready."
+    exec "$@"
+
+%test
+    mpicc hello_world.c -o hello_world
+    mpirun -np 4 ./hello_world
+
