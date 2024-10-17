@@ -1,0 +1,93 @@
+
+bootstrap: docker
+From: ubuntu:18.04
+
+%environment
+    # Set MPICH environment variables
+    export MPICH_DIR=/opt/mpich
+    export PATH="$MPICH_DIR/bin:$PATH"
+    export LD_LIBRARY_PATH="$MPICH_DIR/lib:$LD_LIBRARY_PATH"
+    export MANPATH="$MPICH_DIR/share/man:$MANPATH"
+
+%post
+
+    echo "Installing required packages..."
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update && apt-get install -y wget git bash gcc gfortran g++ make python3 python3-pip python3-dev python3-venv libhdf5-serial-dev python3-tk
+
+
+
+
+    # Install OpenGL libraries needed for Gmsh
+
+    apt-get install -y libglu1-mesa libxcursor1 libxinerama1 libxrandr2 libxi6 libxcomposite1 libxt6 ncurses-term vim
+
+    # Install ncurses-term for termianl xterm
+    
+    apt-get install ncurses-term
+    
+    # Install vim
+    apt update && apt install vim
+
+
+    # Create a symlink for python command to point to python3
+    ln -s /usr/bin/python3 /usr/bin/python
+
+    # Update pip and install required Python packages
+    python -m pip install --upgrade pip
+    python -m pip install gekko gmsh h5py matplotlib meshio numpy pathos pygmsh seaborn
+
+
+
+    # Information about the version of MPICH to use
+    export MPICH_VERSION=4.1.2
+
+    #export MPICH_URL=https://www.mpich.org/static/downloads/4.1.2/mpich-4.1.2.tar.gz
+    export MPICH_URL=https://www.mpich.org/static/downloads/$MPICH_VERSION/mpich-$MPICH_VERSION.tar.gz
+    export MPICH_DIR=/opt/mpich
+
+    echo "Installing MPICH..."
+    mkdir -p /tmp/mpich
+    mkdir -p $MPICH_DIR 
+    mkdir -p /opt
+    cd /tmp/mpich && wget -O mpich-$MPICH_VERSION.tar.gz $MPICH_URL && tar xzf mpich-$MPICH_VERSION.tar.gz
+    cd /tmp/mpich/mpich-$MPICH_VERSION && ./configure --prefix=$MPICH_DIR && make -j$(nproc) && make install
+
+
+    # Cleanup specific temporary files created by this script
+    rm -rf /tmp/mpich
+
+    # Clean package lists to reduce image size
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+
+
+    # Re-export the environment variables to ensure they are available globally
+    # Add MPICH to the environment
+    echo "export PATH=$MPICH_DIR/bin:\$PATH" >> /environment
+    echo "export LD_LIBRARY_PATH=$MPICH_DIR/lib:\$LD_LIBRARY_PATH" >> /environment
+
+%files
+    # Copy your project directory
+    /home/davood/projects/raw_perigrain_v2/beta_perigrain_v2_oct_8_2024  /app/perigrain-oct-2024
+
+%runscript
+    echo "Running my application"
+    cd /app/perigrain-oct-2024
+
+    make -f makefile_linux
+    make -f makefile_linux simulate3d
+
+%test
+    export PATH="/opt/mpich/bin:$PATH"
+    export LD_LIBRARY_PATH="/opt/mpich/lib:$LD_LIBRARY_PATH"
+    python3 -c "import numpy; print(numpy.__version__)"
+    which mpicc
+    mpicc -v
+
+%help
+    This container includes Python 3.10.12, MPICH 4.1.2, and essential libraries for mesh-related processing. The project is located at /app/perigrain-oct-2024.
+
+
+
